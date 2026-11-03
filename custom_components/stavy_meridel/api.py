@@ -6,6 +6,7 @@ import aiohttp
 
 from .const import BASE_URL, METER_TYPES
 from .parser import SchemaError, parse_dashboard
+from .history import parse_history
 
 
 class ApiError(Exception):
@@ -24,6 +25,7 @@ class PortalClient:
         self.apartment_code = apartment_code
         self.token = None
         self.apartment_id = None
+        self.history = {}
 
     async def _request(self, path, *, login=False, params=None):
         headers = {"Accept": "application/json"}
@@ -80,6 +82,7 @@ class PortalClient:
                 raise ApiError("Apartment ID missing")
             self.apartment_id = apartment_id
         readings = {}
+        history = {}
         for kind in METER_TYPES:
             params = {"meterTypeID": kind, "year1": today.year - 1, "year2": today.year}
             data = await self.get(f"apartment/{self.apartment_id}/dashboard", params)
@@ -89,10 +92,12 @@ class PortalClient:
                     params["meterTypeID"] = -19
                     data = await self.get(f"apartment/{self.apartment_id}/dashboard", params)
                     parsed = parse_dashboard(data, 19, today)
+                history.update(parse_history(data, kind, today))
             except SchemaError as err:
                 raise ApiError(f"Unrecognized meter table (type {kind}): {err}") from err
             for reading in parsed:
                 readings[f"{kind}_{reading.serial}"] = reading
         if not readings:
             raise ApiError("No meters returned")
+        self.history = history
         return readings

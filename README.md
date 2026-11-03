@@ -1,92 +1,107 @@
-# Stavy měřidel pro Home Assistant – experimentální verze 0.1.0
+# Stavy měřidel pro Home Assistant – 0.2.0
 
-Balíček je připravený k prvnímu ověření. Přihlášení skutečným účtem a běh v Home
-Assistantu zatím nebyly otestované. Webové odečty byly ověřeny v přihlášeném portálu;
-API klient vychází z veřejného JavaScriptu aplikace verze 1.38.0. Není to oficiální integrace poskytovatele.
+Neoficiální integrace stavymeridel.cz s instalací přes HACS. Načítá odečty
+studené vody, teplé vody a topení jednou denně. Přihlášení a aktuální stavy
+verze 0.1.0 už byly ověřeny uživatelem. Historické statistiky verze 0.2.0
+mají lokální testy; první ověření v Home Assistantu teprve proběhne.
 
-## Co obsahuje
+## Nově: Energie a měsíční/roční přehledy
 
-- Nastavení přihlašovacího jména, hesla a kódu bytu přes formulář v HA.
-- Čtení topení, teplé a studené vody jednou za 24 hodin.
-- Samostatné senzory podle sériových čísel a diagnostický senzor synchronizace.
-- Obnovení přihlášení při HTTP 401 a nové zadání hesla při odmítnutí účtu.
-- Změna nebo neznámý formát API způsobí chybu, nikoli dosazení nulových odečtů.
+- Import dostupných měsíčních odečtů z tabulek portálu do dlouhodobých statistik HA.
+- Voda v m³ je k dispozici jako externí statistika pro panel **Energie → Voda**.
+  V seznamu vybírejte položky s názvem **měsíční odečty**, nikoli původní senzor
+  aktuálního stavu. Názvy obsahují typ vody, sériové číslo a kód bytu.
+- Statistiky topení mají původní jednotky poskytovatele (u rozdělovačů dílky).
+  Nejsou převáděny na kWh ani peníze. Zobrazí je karta **Statistický graf**.
+- Každé měřidlo má také senzory **tento měsíc** a **tento rok**.
+- Atribut původního senzoru `monthly_statistic_id` obsahuje identifikátor
+  pro výběr v grafech. Statistiky mají ID `stavy_meridel:byt_KOD_TYP_SERIOVE_CISLO`.
+- Archiv uchovává už stažené starší roky i po tom, co je portál přestane vracet.
+  Je uložený lokálně v HA, nikoli na GitHubu.
 
-První verze záměrně nemá dlouhodobé statistiky, import historie ani napojení do
-panelu Energie. Měsíční sloupec sám neposkytuje přesný čas odečtu a vodní senzor
-by jinak mohl vykázat starší spotřebu v den stažení. Topení zůstává v dílcích
-poskytovatele. Roční reset se zobrazí jako změna stavu, nepřepočítává se na spotřebu.
+### Přesnost a dostupná historie
 
-`reading_period` označuje měsíc sloupce, nikoli čas skutečného měření.
-Čas úspěšné synchronizace také není časem měření. Senzory mohou být nedostupné,
-pokud nejnovější sloupec nemá hodnotu nebo portál označí měřidlo za chybné.
+Zdrojová tabulka poskytuje **měsíční** stavy. Celá známá spotřeba měsíce se v HA
+ukládá do jeho prvního hodinového intervalu. Měsíční a roční součty tak patří
+ke správnému období, ale denní a hodinový průběh není skutečné měření: v denním
+pohledu se měsíční částka objeví první den měsíce. Aktuální měsíc je průběžný
+předběžný součet a při dalším stažení se stejný záznam aktualizuje bez zdvojení.
 
-## Instalace z GitHubu přes HACS
+První měsíc vody bez předchozího známého stavu nelze spočítat a vynechá se.
+Chybějící měsíce se nerozdělují odhadem. Roční senzor s neúplnými podklady
+má `year_incomplete: true` a ukazuje součet známých měsíců; nejde o celý rok.
+Leden rozdělovačů topení v dílcích používá ročně nulovaný stav. U vody a
+měřidel tepla v GJ/kWh se nulování nepředpokládá. Po výměně měřidla vznikne
+nová série podle sériového čísla a její první neznámá spotřeba se nedopočítává.
+
+Zdroj zpočátku požaduje minulý a aktuální rok stejně jako webový portál. Starší
+roky, které portál v této odpovědi nevrací, nejsou automaticky dostupné. Dočasně
+chybějící historická buňka nesmaže dříve archivovanou známou hodnotu.
+`reading_period` není přesný čas skutečného měření; čas synchronizace jím také není.
+
+## Instalace a aktualizace přes HACS
 
 Repozitář: https://github.com/Paulee196/Stavymeridel
 
-Po nahrání souborů do repozitáře:
+1. V HACS → nabídka → Vlastní repozitáře přidejte uvedenou URL, typ **Integrace**.
+2. Vyhledejte **Stavy měřidel (experimentální)** a stáhněte integraci.
+   Při aktualizaci z větve bez vydání použijte v detailu nabídku **Znovu stáhnout**.
+3. Restartujte Home Assistant. Minimální verze HA je 2025.11.
+4. Nastavení → Zařízení a služby → Přidat integraci → **Stavy měřidel**.
+5. Zadejte účet uživatele bytu a desetimístný kód bytu. Při aktualizaci už
+   existujícího nastavení se znovu nepřihlašujete.
+6. Po úspěšné synchronizaci otevřete nastavení Energie, sekci Voda, a vyberte
+   odpovídající statistiku s názvem **měsíční odečty**. Recorder importuje data
+   na pozadí, proto se seznam může objevit až s malým zpožděním.
 
-1. V HACS otevřete nabídku → Vlastní repozitáře.
-2. Vložte `https://github.com/Paulee196/Stavymeridel`, zvolte typ **Integrace** a přidejte jej.
-3. Vyhledejte **Stavy měřidel (experimentální)** a stáhněte integraci.
-4. Restartujte HA a přes Nastavení → Zařízení a služby → Přidat integraci
-   přidejte **Stavy měřidel**. Zadejte přihlášení a kód bytu pouze zde.
+Studenou a teplou vodu lze sledovat samostatně. Nepřidávejte současně jejich
+součet i oba dílčí zdroje do stejné celkové spotřeby, aby se voda nepočítala dvakrát.
 
-Aktualizace kódu se pak distribuují stejným repozitářem. Zdrojový kód je veřejný,
-ale přihlašovací údaje, kód vašeho bytu a odečty do repozitáře nepatří.
-Manifest odkazuje na tento repozitář a jeho issues; správcem je `@Paulee196`.
-Struktura už obsahuje `hacs.json`; instalace přes HACS dosud nebyla ověřena.
+## Graf po měsících a rocích
 
-## Ruční instalace první zkušební verze
+Na dashboard přidejte **Statistický graf**, vyberte externí statistiky měřidel,
+statistiku **změna**, sloupcový graf a období **měsíc** nebo **rok**.
+Vodu a topení dejte do samostatných grafů kvůli různým jednotkám.
+Ukázka (ID nahraďte atributem `monthly_statistic_id` svého senzoru):
 
-1. Rozbalte ZIP. Celou složku `custom_components/stavy_meridel` zkopírujte do
-   `/config/custom_components/stavy_meridel` na Home Assistantu. Soubor
-   `manifest.json` musí ležet přímo v této složce. Lze použít například Samba
-   nebo již nainstalovaný Studio Code Server.
-2. Restartujte Home Assistant.
-3. Nastavení → Zařízení a služby → Přidat integraci → **Stavy měřidel**.
-4. Zadejte účet běžného uživatele bytu a desetimístný kód bytu (mezery se odstraní).
-   Heslo se zadává pouze zde; neposílejte ho do chatu. HA ho uloží do své konfigurace
-   stejně jako přihlašovací údaje jiných integrací. Chraňte také zálohy HA.
-5. Zkontrolujte, že všechny stavy souhlasí s portálem a že atribut `reading_period`
-   odpovídá poslednímu měsíci. První verzi nepoužívejte pro fakturaci nebo ochranné automatizace.
+```yaml
+type: statistics-graph
+title: Spotřeba vody po měsících
+chart_type: bar
+period: month
+days_to_show: 730
+stat_types:
+  - change
+entities:
+  - entity: stavy_meridel:byt_KOD_4_SERIOVE_CISLO
+    name: Studená voda
+  - entity: stavy_meridel:byt_KOD_2_SERIOVE_CISLO
+    name: Teplá voda
+```
 
-Pokud se integrace nezobrazí, obnovte stránku HA po restartu. Pokud přidání selže,
-ověřte přihlašovací údaje v portálu a případně použijte níže uvedený lokální test.
-Integrace neobchází ověření prohlížeče ani CAPTCHA. Pokud je ochrana vyžadována
-i před API, bude potřeba vyřešit přístup s poskytovatelem nebo zvolit jiný způsob.
+Pro roční graf změňte `period` na `year`. Výběr období v panelu Energie
+umožňuje procházet dostupné měsíce a roky.
 
-## Volitelný lokální test před instalací
+## Ruční instalace
 
-Na počítači s Pythonem a knihovnou aiohttp spusťte `python probe.py` z této složky.
-Heslo se zadává skrytě a zůstává jen v paměti procesu. Test pošle přihlášení přímo
-na `https://stavymeridel.cz`, načte tabulky a vypíše pouze jejich strukturu a počet
-rozpoznaných měřidel. Neukládá odpovědi, token ani heslo. Bez úspěšného testu nelze
-tvrdit, že formát skutečného API odpovídá parseru.
+Zkopírujte `custom_components/stavy_meridel` do
+`/config/custom_components/stavy_meridel`, restartujte HA a přidejte integraci.
+Heslo se zadává pouze v HA. Je uložené v konfiguraci HA jako u jiných integrací;
+chraňte i zálohy. Kód bytu, odečty a hesla nepatří do veřejného repozitáře.
 
-## Ověření provedené při přípravě
+## Ověření a diagnostika
 
-Automatické testy používají **umělé odpovědi**, nikoli zachycená data účtu.
-Kontrolují mimo jiné neplatné číslo, chybějící hodnotu, budoucí sloupce,
-roční reset, jednotky a obnovení přihlášení. Spuštění: `python -m unittest discover -s tests -v`.
-Kontrola syntaxe neověřuje běh v HA; ten je potřeba dokončit při prvním nasazení.
+Lokální testy: `python -m unittest discover -s tests -v` (Python, aiohttp, tzdata).
+Testy používají umělé odpovědi, ne přihlašovací údaje účtu. Ověřují mimo jiné
+měsíční zařazení, časové pásmo, reset topení, vynechané měsíce a opravy dat.
+Testy neověřují běh recorderu ani UI Energie v konkrétním HA.
 
-## Zdroj protokolu a omezení
+Volitelně `python probe.py` ověří přihlášení a parser lokálně; heslo zadává skrytě.
+Nevypisuje ani neukládá token nebo hodnoty odečtů. Integrace neobchází CAPTCHA
+ani ochranu prohlížeče. Neznámý formát API způsobí chybu místo nulových odečtů.
 
-Veřejná aplikace: https://stavymeridel.cz/assets/index-Dxc54k7K.js
+Zdroj protokolu: veřejná aplikace https://stavymeridel.cz/assets/index-Dxc54k7K.js
+(login HTTP Basic, další požadavky Bearer token a role uživatele bytu).
 
-- GET `/odecty/login`, HTTP Basic; odpověď s `token`.
-- Další čtení s `Authorization: Bearer …` a `roleId: 1` (uživatel bytu).
-- GET `/odecty/apartments/byCode?code=…` pro interní ID bytu.
-- GET `/odecty/apartment/{id}/dashboard?meterTypeID=…&year1=…&year2=…`.
-- Typy 19 (případně -19), 2 a 4; tabulka `measurementsTable.headers/rows`;
-  buňky s `value`, hlavičky s `key` a `label`.
-
-Parser rozpoznává měsíční hlavičky podle českých názvů měsíců nebo číselného
-zápisu. Neznámé schéma odmítne. Změny portálu mohou vyžadovat úpravu integrace.
-Přímé přihlašování a stahování ze sítě HA, platnost tokenů a pravidelnost publikace
-odečtů zůstávají neověřené. Balíček neobsahuje přihlašovací údaje ani snímky účtu.
-
-Odinstalace: odeberte integraci v HA, potom její složku z `custom_components` a
-restartujte HA. Odebrání neovlivňuje účet portálu ani měřidla.
+Odinstalace: odeberte integraci v HA a potom její složku z `custom_components`.
+Importované dlouhodobé statistiky ani lokální archiv se automaticky nemažou.
