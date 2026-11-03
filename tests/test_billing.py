@@ -75,6 +75,25 @@ class BillingTests(unittest.TestCase):
             with self.subTest(price=price), self.assertRaises(ValueError):
                 b.set_tariff([], 4, "2026-01", price)
 
+    def test_visible_price_edit_respects_selected_month_and_keeps_history(self):
+        options = {"history_years": 3, "price_editor_date": "2025-01-01",
+                   "tariffs": [{"kind": 4, "from": "2026-01", "price": 150}]}
+        updated = b.price_control_options(options, 4, 100, date(2026, 11, 3), "CZK")
+        self.assertEqual(updated["history_years"], 3)
+        self.assertEqual(b.price_for_month(updated["tariffs"], 4, "2025-06"), 100)
+        self.assertEqual(b.price_for_month(updated["tariffs"], 4, "2026-06"), 150)
+        self.assertEqual(updated["tariff_currency"], "CZK")
+
+    def test_date_control_alone_does_not_create_prices(self):
+        self.assertEqual(b.editor_date({}, date(2026, 11, 3)), date(2026, 11, 1))
+        with self.assertRaises(ValueError):
+            b.editor_date({"price_editor_date": "2026-11-03"}, date(2026, 11, 3))
+
+    def test_price_control_keeps_original_currency(self):
+        result = b.price_control_options({"tariff_currency": "CZK"}, 4, 100,
+                                         date(2026, 11, 3), "EUR")
+        self.assertEqual(result["tariff_currency"], "CZK")
+
 
 if __name__ == "__main__":
     unittest.main()

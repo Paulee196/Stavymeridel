@@ -1,6 +1,7 @@
 """Prices effective from a calendar month and comparable completed periods."""
 from .history import monthly_consumption
 import math
+from datetime import date
 
 
 def price_for_month(tariffs, kind, period):
@@ -24,6 +25,22 @@ def set_tariff(tariffs, kind, period, price):
     items = [t for t in tariffs if (t["kind"], t["from"]) != (kind, period)]
     items.append({"kind": kind, "from": period, "price": price})
     return sorted(items, key=lambda t: (t["kind"], t["from"]))
+
+
+def editor_date(options, today):
+    """The selected month affects only prices subsequently entered by the user."""
+    value = date.fromisoformat(options["price_editor_date"]) if options.get("price_editor_date") else today.replace(day=1)
+    if value.day != 1:
+        raise ValueError("Select the first day of a month")
+    return value
+
+
+def price_control_options(options, kind, value, today, currency):
+    """Edit a single price in the selected month, retaining every other setting."""
+    period = editor_date(options, today).strftime("%Y-%m")
+    return {**options,
+            "tariffs": set_tariff(options.get("tariffs", []), kind, period, value),
+            "tariff_currency": options.get("tariff_currency", currency)}
 
 
 def compare_years(item, today):

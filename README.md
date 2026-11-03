@@ -1,4 +1,4 @@
-# Stavy měřidel pro Home Assistant – 0.3.0
+# Stavy měřidel pro Home Assistant – 0.4.0
 
 Neoficiální integrace stavymeridel.cz s instalací přes HACS. Načítá odečty
 studené vody, teplé vody a topení jednou denně. Přihlášení a aktuální stavy
@@ -66,6 +66,22 @@ Repozitář: https://github.com/Paulee196/Stavymeridel
 Studenou a teplou vodu lze sledovat samostatně. Nepřidávejte současně jejich
 součet i oba dílčí zdroje do stejné celkové spotřeby, aby se voda nepočítala dvakrát.
 
+## Ceny přímo mezi ovládacími prvky zařízení
+
+Otevřete zařízení **Odečty bytu**. Nad senzory najdete sekci **Ovládací prvky**:
+
+1. **Platnost nově zadané ceny od** – zvolte první den měsíce.
+2. **Cena studené vody** – částka za m³.
+3. **Cena teplé vody včetně ohřevu** – částka za m³.
+4. **Cena topení za dílek (odhad)** – volitelná orientační sazba.
+
+Nejdřív vyberte datum a pak změňte cenu. Změna částky se uloží hned a přepočítá
+náklady bez restartu a bez dalšího stahování odečtů. Samotné přepnutí data
+žádnou cenu nevytvoří ani nezmění. Zobrazená částka odpovídá sazbě platné
+ve vybraném měsíci; pokud sazba neexistuje, je hodnota neznámá, nikoli nula.
+Předchozí cenové záznamy zůstávají zachované. Tyto entity lze přidat také
+na vlastní dashboard jako ovládací prvky. Fungují i při výpadku portálu.
+
 ## Nastavení cen a nákladů v Energii
 
 1. Nastavení → Zařízení a služby → Stavy měřidel → **Konfigurovat**.
@@ -75,7 +91,7 @@ součet i oba dílčí zdroje do stejné celkové spotřeby, aby se voda nepoč�
    z HA při prvním uložení ceny a u sazeb zůstává zachována.
 4. Každou změnu ceny zadejte s jejím vlastním datem platnosti. Stejný typ a datum
    upraví existující sazbu. Cena neplatí zpětně před uvedený měsíc.
-5. Integrace se po uložení sama znovu načte, přepočítá dostupné oceněné měsíce a
+5. Integrace po uložení přepočítá dostupné oceněné měsíce bez restartu a
    vytvoří statistiky označené **náklady**. Bez zadané sazby se cena nepovažuje za nulu.
 6. V nastavení Energie → Voda upravte příslušný zdroj. Zvolte **Použít entitu
    sledující celkové náklady** a vyberte odpovídající statistiku **náklady**

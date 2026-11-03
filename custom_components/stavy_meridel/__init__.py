@@ -18,6 +18,7 @@ from .history import history_issue, merge_history, monthly_consumption, statisti
 from .billing import monthly_costs
 
 LOGGER = logging.getLogger(__name__)
+PLATFORMS = [Platform.SENSOR, Platform.NUMBER, Platform.DATE]
 
 
 class PortalCoordinator(DataUpdateCoordinator):
@@ -43,6 +44,12 @@ class PortalCoordinator(DataUpdateCoordinator):
             raise UpdateFailed(str(err)) from err
         merge_history(self.archive, self.client.history)
         await self.store.async_save(self.archive)
+        self.import_statistics()
+        self.last_sync = dt_util.utcnow()
+        return result
+
+    def import_statistics(self):
+        """Reprice cached readings without logging in or polling the portal again."""
         for key, item in self.archive.items():
             if history_issue(item):
                 LOGGER.warning("Monthly statistics skipped: counter decreased outside a known reset")
@@ -71,8 +78,6 @@ class PortalCoordinator(DataUpdateCoordinator):
                                  "unit_class": None,
                                  "name": metadata["name"].replace("měsíční odečty", "náklady")}
                 async_add_external_statistics(self.hass, cost_metadata, cost_rows)
-        self.last_sync = dt_util.utcnow()
-        return result
 
 
 async def async_setup_entry(hass, entry):
@@ -80,14 +85,21 @@ async def async_setup_entry(hass, entry):
     coordinator.archive = await coordinator.store.async_load() or {}
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
-    await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     return True
 
 
 async def async_unload_entry(hass, entry):
-    return await hass.config_entries.async_unload_platforms(entry, [Platform.SENSOR])
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
 async def _async_options_updated(hass, entry):
-    await hass.config_entries.async_reload(entry.entry_id)
+    coordinator = entry.runtime_data
+    if coordinator.client.history_years != entry.options.get("history_years", 2):
+        await hass.config_entries.async_reload(entry.entry_id)
+        return
+    coordinator.tariffs = entry.options.get("tariffs", [])
+    coordinator.currency = entry.options.get("tariff_currency", hass.config.currency)
+    coordinator.import_statistics()
+    coordinator.async_update_listeners()
