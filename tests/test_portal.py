@@ -134,6 +134,43 @@ class Session:
 
 
 class ClientTests(unittest.IsolatedAsyncioTestCase):
+    async def test_older_window_merged_with_current_history_and_requested_once(self):
+        class HistoryClient(api.PortalClient):
+            def __init__(self):
+                super().__init__(None, "test", "example", "0000000000", history_years=2)
+                self.apartment_id = 1
+                self.windows = []
+
+            async def get(self, path, params=None):
+                self.windows.append((params["year1"], params["year2"]))
+                old = params["year1"] == 2024
+                return {"consumptionUnits": "dílky" if params["meterTypeID"] == 19 else "m³",
+                        "measurementsTable": {
+                            "headers": [{"key": "sn", "label": "Sériové číslo"},
+                                        {"key": "month", "label": "Prosinec 2024" if old else "Leden 2025"}],
+                            "rows": [{"sn": {"value": "123"}, "month": {"value": 10 if old else 12}}]}}
+
+        client = HistoryClient()
+        await client.fetch(date(2026, 11, 3))
+        self.assertEqual(client.history["4_123"]["months"], {"2024-12": 10, "2025-01": 12})
+        self.assertEqual(client.windows.count((2024, 2025)), 3)
+        await client.fetch(date(2026, 11, 3))
+        self.assertEqual(client.windows.count((2024, 2025)), 3)
+
+    async def test_unavailable_old_year_does_not_disable_current_readings(self):
+        class HistoryClient(api.PortalClient):
+            async def get(self, path, params=None):
+                if params["year1"] == 2024:
+                    raise api.ApiError("Old data not supported")
+                data = fixture()
+                if params["meterTypeID"] == 19:
+                    data["consumptionUnits"] = "dílky"
+                return data
+        client = HistoryClient(None, "test", "example", "0000000000", history_years=2)
+        client.apartment_id = 1
+        self.assertTrue(await client.fetch(date(2026, 11, 3)))
+        self.assertTrue(client.backfill_failed)
+
     async def test_expired_token_reauth_once(self):
         session = Session([(200, {"token": "first"}), (401, {}),
                            (200, {"token": "second"}), (200, {"ok": True})])

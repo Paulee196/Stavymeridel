@@ -27,5 +27,36 @@
       "already_configured": "Tento byt je již nastavený.",
       "reauth_successful": "Přihlášení bylo obnoveno."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ceny a historie odečtů",
+        "menu_options": {
+          "price": "Přidat nebo upravit cenu",
+          "history": "Rozsah historických odečtů"
+        }
+      },
+      "price": {
+        "title": "Cena s datem platnosti",
+        "description": "Vyberte měřidlo, cenu a první den měsíce, od kterého platí. Pro změnu již uložené ceny vyberte stejný typ a datum. Teplá voda má obsahovat vodu i ohřev; u topení je cena za dílek pouze odhad podle vyúčtování. Cena se neaplikuje na měsíce před datem platnosti.\n\nUložené ceny:\n\n{tariffs}",
+        "data": {
+          "meter_type": "Co chcete ocenit",
+          "effective_from": "Platí od (první den měsíce)",
+          "price": "Cena za jednotku"
+        }
+      },
+      "history": {
+        "title": "Dostupná historie portálu",
+        "description": "Kolik minulých let má integrace zkusit načíst (plus aktuální rok). Chybějící data se nedopočítávají. Uložený archiv zůstává zachován.",
+        "data": {
+          "history_years": "Počet minulých let"
+        }
+      }
+    },
+    "error": {
+      "month_start_required": "Zvolte první den měsíce. Zdroj poskytuje měsíční odečty, změnu ceny uvnitř měsíce nelze přesně rozdělit.",
+      "invalid_price": "Zadejte nezápornou konečnou cenu."
+    }
   }
 }

@@ -6,7 +6,7 @@ import aiohttp
 
 from .const import BASE_URL, METER_TYPES
 from .parser import SchemaError, parse_dashboard
-from .history import parse_history
+from .history import merge_history, parse_history
 
 
 class ApiError(Exception):
@@ -18,7 +18,7 @@ class AuthError(ApiError):
 
 
 class PortalClient:
-    def __init__(self, session, username, password, apartment_code):
+    def __init__(self, session, username, password, apartment_code, history_years=1):
         self.session = session
         self.username = username
         self.password = password
@@ -26,6 +26,9 @@ class PortalClient:
         self.token = None
         self.apartment_id = None
         self.history = {}
+        self.history_years = history_years
+        self.backfill_done = False
+        self.backfill_failed = False
 
     async def _request(self, path, *, login=False, params=None):
         headers = {"Accept": "application/json"}
@@ -83,7 +86,22 @@ class PortalClient:
             self.apartment_id = apartment_id
         readings = {}
         history = {}
+        self.backfill_failed = False
         for kind in METER_TYPES:
+            if not self.backfill_done:
+                for year in range(today.year - self.history_years, today.year - 1):
+                    try:
+                        old = await self.get(f"apartment/{self.apartment_id}/dashboard", {
+                            "meterTypeID": kind, "year1": year, "year2": year + 1})
+                        parsed_old = parse_dashboard(old, kind, today)
+                        if kind == 19 and not parsed_old:
+                            old = await self.get(f"apartment/{self.apartment_id}/dashboard", {
+                                "meterTypeID": -19, "year1": year, "year2": year + 1})
+                            parse_dashboard(old, kind, today)
+                        merge_history(history, parse_history(old, kind, today))
+                    except (ApiError, SchemaError):
+                        # Optional older data must not disable current readings.
+                        self.backfill_failed = True
             params = {"meterTypeID": kind, "year1": today.year - 1, "year2": today.year}
             data = await self.get(f"apartment/{self.apartment_id}/dashboard", params)
             try:
@@ -92,7 +110,7 @@ class PortalClient:
                     params["meterTypeID"] = -19
                     data = await self.get(f"apartment/{self.apartment_id}/dashboard", params)
                     parsed = parse_dashboard(data, 19, today)
-                history.update(parse_history(data, kind, today))
+                merge_history(history, parse_history(data, kind, today))
             except SchemaError as err:
                 raise ApiError(f"Unrecognized meter table (type {kind}): {err}") from err
             for reading in parsed:
@@ -100,4 +118,5 @@ class PortalClient:
         if not readings:
             raise ApiError("No meters returned")
         self.history = history
+        self.backfill_done = not self.backfill_failed
         return readings

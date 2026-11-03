@@ -1,9 +1,10 @@
-# Stavy měřidel pro Home Assistant – 0.2.1
+# Stavy měřidel pro Home Assistant – 0.3.0
 
 Neoficiální integrace stavymeridel.cz s instalací přes HACS. Načítá odečty
 studené vody, teplé vody a topení jednou denně. Přihlášení a aktuální stavy
-verze 0.1.0 už byly ověřeny uživatelem. Historické statistiky verze 0.2.0
-mají lokální testy; první ověření v Home Assistantu teprve proběhne.
+verze 0.1.0 už byly ověřeny uživatelem. Uživatel následně přidal měsíční statistiky vody do panelu Energie. Nové ceny
+a rozšířené srovnání verze 0.3.0 mají lokální testy; první ověření po aktualizaci
+v Home Assistantu teprve proběhne.
 
 ## Nově: Energie a měsíční/roční přehledy
 
@@ -40,8 +41,10 @@ Leden rozdělovačů topení v dílcích používá ročně nulovaný stav. U vo
 měřidel tepla v GJ/kWh se nulování nepředpokládá. Po výměně měřidla vznikne
 nová série podle sériového čísla a její první neznámá spotřeba se nedopočítává.
 
-Zdroj zpočátku požaduje minulý a aktuální rok stejně jako webový portál. Starší
-roky, které portál v této odpovědi nevrací, nejsou automaticky dostupné. Dočasně
+Zdroj požaduje aktuální rok a standardně dva minulé roky v navazujících
+dvouletých oknech. V nastavení integrace lze změnit rozsah na 1–5 minulých let.
+Portál může starší požadavky odmítnout nebo vracet jen omezenou historii; takové
+roky nejsou automaticky dostupné a nesmějí být považovány za nulovou spotřebu. Dočasně
 chybějící historická buňka nesmaže dříve archivovanou známou hodnotu.
 `reading_period` není přesný čas skutečného měření; čas synchronizace jím také není.
 
@@ -62,6 +65,53 @@ Repozitář: https://github.com/Paulee196/Stavymeridel
 
 Studenou a teplou vodu lze sledovat samostatně. Nepřidávejte současně jejich
 součet i oba dílčí zdroje do stejné celkové spotřeby, aby se voda nepočítala dvakrát.
+
+## Nastavení cen a nákladů v Energii
+
+1. Nastavení → Zařízení a služby → Stavy měřidel → **Konfigurovat**.
+2. Zvolte **Přidat nebo upravit cenu**. Vyberte studenou vodu, teplou vodu
+   nebo orientační cenu topení za dílek.
+3. Zadejte sazbu a **první den měsíce**, od kterého platí. Měna se převezme
+   z HA při prvním uložení ceny a u sazeb zůstává zachována.
+4. Každou změnu ceny zadejte s jejím vlastním datem platnosti. Stejný typ a datum
+   upraví existující sazbu. Cena neplatí zpětně před uvedený měsíc.
+5. Integrace se po uložení sama znovu načte, přepočítá dostupné oceněné měsíce a
+   vytvoří statistiky označené **náklady**. Bez zadané sazby se cena nepovažuje za nulu.
+6. V nastavení Energie → Voda upravte příslušný zdroj. Zvolte **Použít entitu
+   sledující celkové náklady** a vyberte odpovídající statistiku **náklady**
+   stejného typu vody a sériového čísla. Spotřebu ponechte na **měsíční odečty**.
+
+HA u externích statistik vypíná zadání fixní ceny nebo entity s okamžitou cenou.
+Proto sazby spravuje tato integrace a do Energie poskytuje již vypočtenou historii
+nákladů. Má to význam i pro rozdílné ceny letos a loni.
+
+Teplá voda: použijte výslednou sazbu za m³ včetně ohřevu, pokud má výsledek představovat
+celkové variabilní náklady. Cena samotného vodného nezahrne teplo pro ohřev.
+Pevné poplatky, základní složka topení a jiné položky vyúčtování nejsou automaticky
+zahrnuté. Cena topení za dílek je **orientační přepočet**, nikoli oficiální vyúčtování
+ani měření v GJ. Topení v dílcích standardní Energie jako zdroj nepřijímá; použijte
+statistické grafy pro dílky a náklady. Nepřejmenovávejte dílky na kWh nebo GJ.
+
+Každé měřidlo má senzory nákladů za tento měsíc a rok. Atribut `cost_statistic_id`
+obsahuje externí statistiku nákladů použitelnou také pro karty a vlastní přehledy.
+Historické cenové záznamy se nemažou; lze je upravit nebo přidat novou sazbu.
+
+## Výběr období a srovnání s minulým rokem
+
+V Energii použijte výběr období pro měsíc, rok nebo vlastní interval a funkci
+porovnání. Spotřeba i náklady vycházejí z dlouhodobých statistik, nikoli z krátké
+historie stavů. Zdroj má měsíční přesnost: výběr části měsíce nemůže určit
+skutečnou spotřebu mezi dvěma konkrétními dny. Měsíční částka je přiřazená
+první hodině měsíce, proto pro spolehlivé výsledky vybírejte celé měsíce/roky.
+
+Pro každé měřidlo navíc existují senzory **srovnatelné měsíce letos**,
+**stejné měsíce loni** a **meziroční změna** v procentech. Ty zahrnují pouze
+stejné dokončené měsíce obou let. Rozpracovaný aktuální měsíc se nezahrnuje.
+Chybějící měsíce v kterémkoli roce se vynechají u obou stran; atributy
+`compared_months` a `comparison_complete` ukazují skutečný rozsah. Pokud loni
+byla nula, procentní změna není definovaná. Chybějící historie není nula.
+
+Ukázky karet sdílejících výběr období jsou v `cards-example.yaml`.
 
 ## Graf po měsících a rocích
 

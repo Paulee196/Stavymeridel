@@ -1,0 +1,42 @@
+# Example cards for a regular dashboard. Replace KOD/SN placeholders with
+# monthly_statistic_id / cost_statistic_id from your meter's attributes.
+# Consumption is monthly; choose whole calendar months or years.
+type: vertical-stack
+cards:
+  - type: energy-date-selection
+    collection_key: stavy_meridel
+  - type: statistics-graph
+    title: Voda – spotřeba po měsících
+    chart_type: bar
+    period: month
+    stat_types: [change]
+    energy_date_selection: true
+    collection_key: stavy_meridel
+    entities:
+      - entity: stavy_meridel:byt_KOD_4_SN_STUDENE
+        name: Studená voda
+      - entity: stavy_meridel:byt_KOD_2_SN_TEPLE
+        name: Teplá voda
+  - type: statistics-graph
+    title: Voda – náklady po měsících
+    chart_type: bar
+    period: month
+    stat_types: [change]
+    energy_date_selection: true
+    collection_key: stavy_meridel
+    entities:
+      - entity: stavy_meridel:byt_KOD_4_SN_STUDENE_cost
+        name: Studená voda
+      - entity: stavy_meridel:byt_KOD_2_SN_TEPLE_cost
+        name: Teplá voda včetně ohřevu
+  - type: statistics-graph
+    title: Topení – dílky po měsících
+    chart_type: bar
+    period: month
+    stat_types: [change]
+    energy_date_selection: true
+    collection_key: stavy_meridel
+    entities:
+      - entity: stavy_meridel:byt_KOD_19_SN_TOPENI
+        name: Radiátor
+# For yearly bars use period: year. Add other radiators as more entities.

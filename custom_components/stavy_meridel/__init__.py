@@ -15,6 +15,7 @@ from .api import PortalClient, ApiError, AuthError
 from .const import DOMAIN, CONF_APARTMENT_CODE
 from .const import METER_TYPES
 from .history import history_issue, merge_history, monthly_consumption, statistic_id, statistics_rows
+from .billing import monthly_costs
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +25,10 @@ class PortalCoordinator(DataUpdateCoordinator):
         super().__init__(hass, LOGGER, name=DOMAIN, config_entry=entry,
                          update_interval=timedelta(days=1))
         self.client = PortalClient(async_get_clientsession(hass), entry.data[CONF_USERNAME],
-                                   entry.data[CONF_PASSWORD], entry.data[CONF_APARTMENT_CODE])
+                                   entry.data[CONF_PASSWORD], entry.data[CONF_APARTMENT_CODE],
+                                   history_years=entry.options.get("history_years", 2))
+        self.tariffs = entry.options.get("tariffs", [])
+        self.currency = entry.options.get("tariff_currency", hass.config.currency)
         self.last_sync = None
         self.archive = {}
         self.store = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}.history")
@@ -58,6 +62,15 @@ class PortalCoordinator(DataUpdateCoordinator):
                 "mean_type": StatisticMeanType.NONE,
             }
             async_add_external_statistics(self.hass, metadata, rows)
+            cost_rows = statistics_rows(monthly_costs(item, self.tariffs), dt_util.DEFAULT_TIME_ZONE,
+                                        dt_util.utcnow())
+            if cost_rows:
+                cost_metadata = {**metadata,
+                                 "statistic_id": statistic_id(self.apartment_code, key) + "_cost",
+                                 "unit_of_measurement": self.currency,
+                                 "unit_class": None,
+                                 "name": metadata["name"].replace("měsíční odečty", "náklady")}
+                async_add_external_statistics(self.hass, cost_metadata, cost_rows)
         self.last_sync = dt_util.utcnow()
         return result
 
@@ -68,8 +81,13 @@ async def async_setup_entry(hass, entry):
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
+    entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     return True
 
 
 async def async_unload_entry(hass, entry):
     return await hass.config_entries.async_unload_platforms(entry, [Platform.SENSOR])
+
+
+async def _async_options_updated(hass, entry):
+    await hass.config_entries.async_reload(entry.entry_id)

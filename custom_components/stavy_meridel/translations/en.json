@@ -27,5 +27,36 @@
       "already_configured": "This apartment is already configured.",
       "reauth_successful": "Authentication restored."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Prices and reading history",
+        "menu_options": {
+          "price": "Add or edit a price",
+          "history": "Historical reading range"
+        }
+      },
+      "price": {
+        "title": "Price effective from a month",
+        "description": "Choose the meter, price per m³ or allocator unit, and the first day of the effective month. The same type and date edits an existing price. Hot-water prices should include heating. Allocator costs are estimates. Prices do not apply to earlier months.\n\nSaved prices:\n\n{tariffs}",
+        "data": {
+          "meter_type": "Meter type",
+          "effective_from": "Effective from (first day of month)",
+          "price": "Price per unit"
+        }
+      },
+      "history": {
+        "title": "Portal history",
+        "description": "How many previous years to request, in addition to the current year. Missing data is not estimated. Stored history is retained.",
+        "data": {
+          "history_years": "Previous years"
+        }
+      }
+    },
+    "error": {
+      "month_start_required": "Choose the first day of a month. Readings have monthly resolution.",
+      "invalid_price": "Enter a finite, non-negative price."
+    }
   }
 }
