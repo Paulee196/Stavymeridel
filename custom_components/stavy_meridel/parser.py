@@ -30,6 +30,20 @@ def normalized(value):
                    if not unicodedata.combining(c))
 
 
+def canonical_unit(kind, unit):
+    """Normalize spelling only; never convert allocator counts into energy."""
+    unit = "" if unit is None else str(unit).strip()
+    if kind in (2, 4):
+        if unit.replace(" ", "").replace("\u00a0", "").lower() not in ("m³", "m3", "m^3"):
+            raise SchemaError("Unverified water unit")
+        return "m³"
+    if normalized(unit) in ("dil", "dilek", "dilky", "dilku"):
+        return "dílky"
+    if not unit:
+        raise SchemaError("Missing heat unit")
+    return unit
+
+
 def number(value):
     value = plain(value)
     if value is None or value == "":
@@ -96,13 +110,7 @@ def parse_dashboard(payload, kind, today=None):
     period, key = max(candidates)
     room_key = next((h["key"] for h in headers
                      if normalized(h.get("label", "")).strip() == "mistnost"), None)
-    unit = str(payload.get("consumptionUnits", "")).strip()
-    if kind in (2, 4):
-        if unit not in ("m³", "m3", "m^3"):
-            raise SchemaError("Unverified water unit")
-        unit = "m³"
-    elif not unit:
-        raise SchemaError("Missing heat unit")
+    unit = canonical_unit(kind, payload.get("consumptionUnits", ""))
     result, seen = [], set()
     for row in rows:
         if not isinstance(row, dict):

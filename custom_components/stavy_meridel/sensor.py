@@ -1,4 +1,4 @@
-"""Readings without unverified consumption statistics or history backfill."""
+"""Meter readings and calendar consumption with explicit units and precision."""
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -38,12 +38,20 @@ class MeterSensor(CoordinatorEntity, SensorEntity):
         code = entry.data[CONF_APARTMENT_CODE]
         self._attr_unique_id = f"{code}_{key}"
         self._attr_name = f"{METER_TYPES[reading.kind]} {reading.room or reading.serial}"
-        self._attr_native_unit_of_measurement = reading.unit
+        self._initial_unit = reading.unit
+        self._attr_suggested_display_precision = 3 if reading.unit != "dílky" else 0
+        if reading.kind in (2, 4):
+            self._attr_device_class = SensorDeviceClass.WATER
         self._attr_icon = "mdi:water" if reading.kind in (2, 4) else "mdi:radiator"
         # Deliberately no state_class: monthly publication dates are not reading timestamps.
         self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, code)},
                                             name=f"Odečty bytu {code}",
                                             manufacturer="stavymeridel.cz")
+
+    @property
+    def native_unit_of_measurement(self):
+        reading = self.coordinator.data.get(self.key)
+        return reading.unit if reading else self._initial_unit
 
     @property
     def available(self):

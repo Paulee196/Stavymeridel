@@ -1,7 +1,7 @@
 {
   "domain": "stavy_meridel",
   "name": "Stavy měřidel",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "dependencies": ["recorder"],
   "config_flow": true,
   "documentation": "https://github.com/Paulee196/Stavymeridel",

@@ -62,6 +62,26 @@ class ParserTests(unittest.TestCase):
         with self.assertRaises(parser.SchemaError):
             self.parse(data)
 
+    def test_water_unit_spellings_normalized_without_changing_volume(self):
+        for unit in ("m3", "m^3", "m³", " m³ ", "m 3"):
+            data = fixture()
+            data["consumptionUnits"] = unit
+            item, = self.parse(data)
+            self.assertEqual((item.unit, item.value), ("m³", 12.5))
+
+    def test_allocator_units_have_one_canonical_spelling(self):
+        for unit in ("dílek", "dílky", "dílků", "dilky"):
+            data = fixture()
+            data["consumptionUnits"] = unit
+            item, = parser.parse_dashboard(data, 19, date(2026, 11, 3))
+            self.assertEqual(item.unit, "dílky")
+
+    def test_actual_heat_energy_unit_not_relabelled_as_allocator_count(self):
+        data = fixture()
+        data["consumptionUnits"] = "GJ"
+        item, = parser.parse_dashboard(data, 19, date(2026, 11, 3))
+        self.assertEqual(item.unit, "GJ")
+
     def test_reset_keeps_raw_state_without_computing_consumption(self):
         data = fixture()
         data["consumptionUnits"] = "dílky"

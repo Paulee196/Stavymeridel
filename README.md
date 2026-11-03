@@ -1,4 +1,4 @@
-# Stavy měřidel pro Home Assistant – 0.2.0
+# Stavy měřidel pro Home Assistant – 0.2.1
 
 Neoficiální integrace stavymeridel.cz s instalací přes HACS. Načítá odečty
 studené vody, teplé vody a topení jednou denně. Přihlášení a aktuální stavy
@@ -6,6 +6,12 @@ verze 0.1.0 už byly ověřeny uživatelem. Historické statistiky verze 0.2.0
 mají lokální testy; první ověření v Home Assistantu teprve proběhne.
 
 ## Nově: Energie a měsíční/roční přehledy
+
+Jednotky stavů i měsíční/roční spotřeby: voda **m³** (tři desetinná místa,
+tedy rozlišení na litry), topení na rozdělovačích **dílky** (celá čísla).
+Jednotky jsou uložené jako metadata senzoru i historických statistik, aby je
+standardní karty HA zobrazovaly také v grafech. Voda má třídu zařízení `water`.
+Skutečná měřidla tepla v GJ/kWh si ponechávají jednotku zdroje.
 
 - Import dostupných měsíčních odečtů z tabulek portálu do dlouhodobých statistik HA.
 - Voda v m³ je k dispozici jako externí statistika pro panel **Energie → Voda**.
