@@ -1,0 +1,31 @@
+{
+  "title": "Stavy měřidel",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Připojení ke stavymeridel.cz",
+        "description": "Zadejte účet uživatele bytu a desetimístný kód bytu z portálu. Experimentální verze ověří také dostupnost tabulek.",
+        "data": {
+          "username": "Přihlašovací jméno",
+          "password": "Heslo",
+          "apartment_code": "Kód bytu (10 číslic)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Obnovení přihlášení",
+        "data": {
+          "password": "Heslo"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Portál odmítl přihlašovací údaje.",
+      "cannot_connect": "Nelze načíst odečty. Příčinou může být ochrana webu, oprávnění nebo neznámý formát API. Podrobnost při prvním nastavení lze ověřit lokálním testem uvedeným v návodu.",
+      "invalid_code": "Zadejte deset číslic kódu bytu."
+    },
+    "abort": {
+      "already_configured": "Tento byt je již nastavený.",
+      "reauth_successful": "Přihlášení bylo obnoveno."
+    }
+  }
+}

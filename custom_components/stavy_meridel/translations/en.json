@@ -1,0 +1,31 @@
+{
+  "title": "Stavy měřidel",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to stavymeridel.cz",
+        "description": "Experimental integration. Enter your apartment-user account and the 10-digit apartment code.",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "apartment_code": "Apartment code (10 digits)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Restore authentication",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The portal rejected the credentials.",
+      "cannot_connect": "Cannot load readings. The portal may require browser verification, permissions may be insufficient, or the API schema may differ.",
+      "invalid_code": "Enter the 10-digit apartment code."
+    },
+    "abort": {
+      "already_configured": "This apartment is already configured.",
+      "reauth_successful": "Authentication restored."
+    }
+  }
+}

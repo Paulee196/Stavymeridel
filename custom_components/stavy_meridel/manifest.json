@@ -1,0 +1,13 @@
+{
+  "domain": "stavy_meridel",
+  "name": "Stavy měřidel",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/Paulee196/Stavymeridel",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "codeowners": [
+    "@Paulee196"
+  ],
+  "issue_tracker": "https://github.com/Paulee196/Stavymeridel/issues"
+}
